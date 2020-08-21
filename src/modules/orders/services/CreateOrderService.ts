@@ -20,8 +20,13 @@ interface IRequest {
 @injectable()
 class CreateOrderService {
   constructor(
+    @inject('OrdersRepository')
     private ordersRepository: IOrdersRepository,
+
+    @inject('ProductsRepository')
     private productsRepository: IProductsRepository,
+
+    @inject('CustomersRepository')
     private customersRepository: ICustomersRepository,
   ) {}
 
@@ -32,12 +37,47 @@ class CreateOrderService {
       throw new AppError('This customer does not exist')
     }
 
-    const product = await this.productsRepository.findAllById()
+    const existentProducts = await this.productsRepository.findAllById(products)
+
+    if(!existentProducts.length) {
+      throw new AppError('Could not find any products with given ids')
+    }
+
+    const existentProductsIds = existentProducts.map(product => product.id)
+
+    const checkInexistentProducts = products.filter(product => !existentProductsIds.includes(product.id))
+
+    if(checkInexistentProducts.length) {
+      throw new AppError(`Could not find product ${checkInexistentProducts[0].id}`)
+    }
+
+    const findProductsWithNoQuantityAvailable = products.filter(product => (
+      existentProducts.filter(p => p.id === product.id)[0].quantity < product.quantity
+    ))
+
+    if(findProductsWithNoQuantityAvailable.length) {
+      throw new AppError(`The quantity ${findProductsWithNoQuantityAvailable[0].quantity} is not available for ${findProductsWithNoQuantityAvailable[0].id}`)
+    }
+
+    const serializedProducts = products.map(product => ({
+      product_id: product.id,
+      quantity: product.quantity,
+      price: existentProducts.filter(p => p.id === product.id)[0].price
+    }))
 
     const order = this.ordersRepository.create({
       customer,
-      products
+      products: serializedProducts
     })
+
+    const orderedProductsQuantity = products.map(product => ({
+      id: product.id,
+      quantity: existentProducts.filter(p => p.id = product.id)[0].quantity - product.quantity
+    }))
+
+    await this.productsRepository.updateQuantity(orderedProductsQuantity)
+
+    return order
   }
 }
 
