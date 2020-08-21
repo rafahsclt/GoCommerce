@@ -8,7 +8,7 @@ export default class AddCustomerIdToOrders1598013456627 implements MigrationInte
             type: 'uuid',
             isNullable: true
         }))
-        
+
         await queryRunner.createForeignKey('orders', new TableForeignKey({
             name: 'OrdersCustomer',
             columnNames: ['customer_id'],

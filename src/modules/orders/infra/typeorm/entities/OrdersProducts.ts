@@ -11,8 +11,8 @@ import {
 import Order from '@modules/orders/infra/typeorm/entities/Order';
 import Product from '@modules/products/infra/typeorm/entities/Product';
 
-@Entity('order_products')
-class OrderProducts {
+@Entity('orders_products')
+class OrdersProducts {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -43,4 +43,4 @@ class OrderProducts {
   updated_at: Date;
 }
 
-export default OrderProducts;
+export default OrdersProducts;
